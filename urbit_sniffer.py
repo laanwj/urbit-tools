@@ -10,7 +10,8 @@ Usage: urbit_sniffer.py [-p <port1>-<port2>,<port3>,...] [-i <interface>]
 import socket, struct, sys, io, argparse
 from struct import pack,unpack
 from binascii import b2a_hex
-from urbit.util import format_hexnum,from_le,to_le,cue
+from urbit.util import format_hexnum,from_le,to_le,strings
+from urbit.cue import cue
 from urbit.pname import pname
 from urbit.crua import de_crua
 
@@ -93,6 +94,58 @@ def parse_args():
 
     return args
 
+def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
+    try:
+        # Urbit header and payload
+        urhdr = unpack('<L', data[0:4])[0]
+        proto = urhdr & 7
+        mug = (urhdr >> 3) & 0xfffff
+        yax = (urhdr >> 23) & 3
+        yax_bytes = 1<<(yax+1)
+        qax = (urhdr >> 25) & 3
+        qax_bytes = 1<<(qax+1)
+        crypto = (urhdr >> 27)
+        sender = from_le(data[4:4+yax_bytes])
+        receiver = from_le(data[4+yax_bytes:4+yax_bytes+qax_bytes])
+        payload = data[4+yax_bytes+qax_bytes:]
+        if crypto == 2: # %fast
+            keyhash = from_le(payload[0:16])
+            payload = payload[16:]
+        else:
+            keyhash = None
+    except (IndexError, struct.error):
+        print('Warn: invpkt')
+        return
+
+    # Decode packet if crypto known
+    decrypted = False
+    if crypto == 0:
+        decrypted = True
+    if crypto == 2 and keyhash in args.keys: # %fast
+        payload = from_le(payload)
+        payload = de_crua(args.keys[keyhash], payload)
+        payload = to_le(payload)
+        decrypted = True
+    # Print packet
+    hdata = [('proto', str(proto)),
+             ('mug', '%05x' % mug),
+             ('crypto', crypto_name(crypto)),
+             ('sender', pname(sender)),
+             ('receiver', pname(receiver))]
+    if keyhash is not None:
+         hdata += [('keyhash', format_hexnum(keyhash))]
+    print(  colorize(ipv4str(srcaddr), COLOR_IP) + v_colon + colorize(str(sport), COLOR_IP) + ' ' +
+            v_arrow + ' ' +
+            colorize(ipv4str(dstaddr), COLOR_IP) + v_colon + colorize(str(dport), COLOR_IP) + ' ' +
+            ' '.join(colorize(key, COLOR_HEADER) + v_equal + colorize(value, COLOR_VALUE) for (key,value) in hdata))
+    if decrypted: # decrypted or unencrypted data
+        print('    ' + colorize(hexstr(payload), COLOR_DATA))
+        cake = cue(from_le(payload))
+        print('    ' + (', '.join(strings(cake))))
+    else: # [sealed]
+        print('    [' + colorize(hexstr(payload), COLOR_DATA_ENC)+']')
+
+
 def main(args):
     # would be better as filtering happens in the kernel but doesn't catch outgoing packets:
     #s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
@@ -129,56 +182,11 @@ def main(args):
 
             if dport not in args.ports and sport not in args.ports: # only urbit ports
                 continue
-
-            # Urbit header and payload
-            urhdr = unpack('<L', data[0:4])[0]
-            proto = urhdr & 7
-            mug = (urhdr >> 3) & 0xfffff
-            yax = (urhdr >> 23) & 3
-            yax_bytes = 1<<(yax+1)
-            qax = (urhdr >> 25) & 3
-            qax_bytes = 1<<(qax+1)
-            crypto = (urhdr >> 27)
-            sender = from_le(data[4:4+yax_bytes])
-            receiver = from_le(data[4+yax_bytes:4+yax_bytes+qax_bytes])
-            payload = data[4+yax_bytes+qax_bytes:]
-            if crypto == 2: # %fast
-                keyhash = from_le(payload[0:16])
-                payload = payload[16:]
-            else:
-                keyhash = None
         except (IndexError, struct.error):
             print('Warn: invpkt')
             continue
 
-        # Decode packet if crypto known
-        decrypted = False
-        if crypto == 0:
-            decrypted = True
-        if crypto == 2 and keyhash in args.keys: # %fast
-            payload = from_le(payload)
-            payload = de_crua(args.keys[keyhash], payload)
-            payload = to_le(payload)
-            decrypted = True
-        # Print packet
-        (sport, dport, ulength, uchecksum) = unpack('>HHHH', packet[ihl:ihl+8])
-        hdata = [('proto', str(proto)),
-                 ('mug', '%05x' % mug),
-                 ('crypto', crypto_name(crypto)),
-                 ('sender', pname(sender)),
-                 ('receiver', pname(receiver))]
-        if keyhash is not None:
-             hdata += [('keyhash', format_hexnum(keyhash))]
-        print(  colorize(ipv4str(srcaddr), COLOR_IP) + v_colon + colorize(str(sport), COLOR_IP) + ' ' +
-                v_arrow + ' ' +
-                colorize(ipv4str(dstaddr), COLOR_IP) + v_colon + colorize(str(dport), COLOR_IP) + ' ' +
-                ' '.join(colorize(key, COLOR_HEADER) + v_equal + colorize(value, COLOR_VALUE) for (key,value) in hdata))
-        if decrypted: # decrypted or unencrypted data
-            print('    ' + colorize(hexstr(payload), COLOR_DATA))
-            cake = cue(from_le(payload))
-            print('    ' + repr(cake))
-        else: # [sealed]
-            print('    [' + colorize(hexstr(payload), COLOR_DATA_ENC)+']')
+        dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data)
 
 if __name__ == '__main__':
     # Force UTF8 out

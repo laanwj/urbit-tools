@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 import urbit.util as urbit_util
+from urbit.util import to_le, strings
+from urbit.cue import cue
 import binascii
 import sys
 
@@ -15,13 +17,13 @@ packets_hex = [
 d = []
 for packet in packets_hex:
     packet = binascii.a2b_hex(packet)
-    num = urbit_util.varnum_le(packet)
-    cake = urbit_util.cue(num)
+    num = urbit_util.from_le(packet)
+    cake = cue(num)
     assert(urbit_util.num_to_term(cake[0]) == '%fore')
     inner = cake[1][1][1]
     print(urbit_util.format_hexnum(inner & ((1<<96)-1)))
     inner >>= 96 # drop routing info
-    inner_cake = urbit_util.cue(inner)
+    inner_cake = cue(inner)
     assert(urbit_util.num_to_term(inner_cake[0]) == '%carp')
     #print(inner_cake)
     inner2_skin = inner_cake[1][0]
@@ -30,11 +32,13 @@ for packet in packets_hex:
     inner2_hdr = inner_cake[1][1][1][1][0]
     inner2 = inner_cake[1][1][1][1][1]
     d.append(inner2)
-    #print(binascii.b2a_hex(urbit_util.to_le(inner2_hdr)))
-    #print(binascii.b2a_hex(urbit_util.to_le(inner2)))
+    #print(binascii.b2a_hex(to_le(inner2_hdr)))
+    #print(binascii.b2a_hex(to_le(inner2)))
     print(inner2_skin)
 
-#d = ((d[1] & ((1<<8192)-1)) << 8191) | d[0]
-#d = (d[1]<<8192) | d[0]
+d = (d[1]<<8192) | d[0]
 
-#print(urbit_util.cue(d))
+hypercake = cue(d)
+print(hypercake)
+print(strings(hypercake))
+
