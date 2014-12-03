@@ -134,14 +134,24 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
              ('receiver', pname(receiver))]
     if keyhash is not None:
          hdata += [('keyhash', format_hexnum(keyhash))]
-    print(  colorize(ipv4str(srcaddr), COLOR_IP) + v_colon + colorize(str(sport), COLOR_IP) + ' ' +
-            v_arrow + ' ' +
-            colorize(ipv4str(dstaddr), COLOR_IP) + v_colon + colorize(str(dport), COLOR_IP) + ' ' +
+
+    if srcaddr is not None:
+        metadata = (colorize(ipv4str(srcaddr), COLOR_IP) + v_colon + colorize(str(sport), COLOR_IP) + ' ' +
+                v_arrow + ' ' +
+                colorize(ipv4str(dstaddr), COLOR_IP) + v_colon + colorize(str(dport), COLOR_IP))
+    else:
+        metadata = '    %fore' # nested packet
+
+    print( metadata  + ' ' +
             ' '.join(colorize(key, COLOR_HEADER) + v_equal + colorize(value, COLOR_VALUE) for (key,value) in hdata))
     if decrypted: # decrypted or unencrypted data
         print('    ' + colorize(hexstr(payload), COLOR_DATA))
         cake = cue(from_le(payload))
-        print('    ' + (', '.join(repr(x) for x in strings(cake))))
+        if cake[0] == 1701998438: # %fore
+            subpacket = to_le(cake[1][1][1])
+            dump_urbit_packet(args, None, None, None, None, subpacket)
+        else:
+            print('    ' + (', '.join(repr(x) for x in strings(cake))))
     else: # [sealed]
         print('    [' + colorize(hexstr(payload), COLOR_DATA_ENC)+']')
 
