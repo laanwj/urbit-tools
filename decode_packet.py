@@ -30,8 +30,8 @@ for packet in packets_hex:
     inner2_hdr = inner_cake[1][1][1][1][0]
     inner2 = inner_cake[1][1][1][1][1]
     d.append(inner2)
-    #print(binascii.b2a_hex(urbit_util.num_to_bin(inner2_hdr)))
-    #print(binascii.b2a_hex(urbit_util.num_to_bin(inner2)))
+    #print(binascii.b2a_hex(urbit_util.to_le(inner2_hdr)))
+    #print(binascii.b2a_hex(urbit_util.to_le(inner2)))
     print(inner2_skin)
 
 #d = ((d[1] & ((1<<8192)-1)) << 8191) | d[0]

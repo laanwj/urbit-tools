@@ -1,8 +1,4 @@
 
-def varnum_le(x):
-    '''Little-endian bytes to long'''
-    return int.from_bytes(x, 'little') 
-
 def format_hexnum(x):
     '''Format hexadecimal number for urbit shell'''
     rv = '%x' % x
@@ -44,8 +40,7 @@ def format_hexnum(x):
 
 def _read_value(a):
     if a == 0:
-        #raise ValueError('cue: invalid value zero')
-        return (0, None)
+        raise ValueError('cue: invalid value zero')
     if (a&3) == 0: # varint
         a >>= 2
         count = 0
@@ -67,8 +62,7 @@ def _read_value(a):
         a >>= 2
         return (a, 0)
     else:
-        #raise ValueError('cue: invalid marker 3')
-        return (0, None)
+        raise ValueError('cue: invalid marker 3')
     
 def cue(a):
     '''unpack noun'''
@@ -76,13 +70,15 @@ def cue(a):
     # cells
     return _read_value(a)[1]
 
-def num_to_bin(x):
+def to_le(x):
+    '''Long to little-endian bytes'''
     size = (x.bit_length()+7)//8
     return x.to_bytes(size, 'little')
 
-def bin_to_num(x):
-    return int.from_bytes(x, 'little')
+def from_le(x):
+    '''Little-endian bytes to long'''
+    return int.from_bytes(x, 'little') 
 
 def num_to_term(x):
     '''@tas'''
-    return '%' + num_to_bin(x).decode()
+    return '%' + to_le(x).decode()

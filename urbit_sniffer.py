@@ -10,8 +10,9 @@ Usage: urbit_sniffer.py [-p <port1>-<port2>,<port3>,...] [-i <interface>]
 import socket, struct, sys, io, argparse
 from struct import pack,unpack
 from binascii import b2a_hex
-from urbit.util import format_hexnum,varnum_le
+from urbit.util import format_hexnum,from_le,to_le,cue
 from urbit.pname import pname
+from urbit.crua import de_crua
 
 if sys.version_info[0:2] < (3,0):
     print("Requires python3", file=sys.stderr)
@@ -22,6 +23,8 @@ class Args: # default args
     interface = b'eth0'
     # ports we're interested in
     ports = set(list(range(4000,4008)) + [13337, 41954])
+    # known keys for decrypting packets
+    keys = {}
 
 # constants...
 CRYPTOS = {0:'%none', 1:'%open', 2:'%fast', 3:'%full'}
@@ -52,6 +55,7 @@ COLOR_IP = 21
 COLOR_HEADER = 27
 COLOR_VALUE = 33
 COLOR_DATA = 250
+COLOR_DATA_ENC = 245
 v_arrow = colorize('→', 240)
 v_attention = colorize('>', 34) + colorize('>', 82) + colorize('>', 118)
 v_colon = colorize(':', 240)
@@ -64,6 +68,7 @@ def parse_args():
     idefault = args.interface.decode()
     parser.add_argument('-p, --ports', dest='ports', help='Ports to listen on (default: '+pdefault+')')
     parser.add_argument('-i, --interface', dest='interface', help='Interface to listen on (default:'+idefault+')', default=idefault)
+    parser.add_argument('-k, --keys', dest='keys', help='Import keys from file (with <keyhash> <key> per line)', default=None)
 
     r = parser.parse_args()
     args.interface = r.interface.encode()
@@ -74,6 +79,17 @@ def parse_args():
             ai = int(a)
             bi = int(b) if b else ai
             args.ports.update(list(range(int(ai), int(bi)+1)))
+    if r.keys is not None:
+        args.keys = {}
+        print(v_attention + ' Loading decryption keys from ' + r.keys)
+        with open(r.keys, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                l = line.split()
+                # filter out '.' so that keys can be copied directly
+                args.keys[int(l[0].replace('.',''))] = int(l[1].replace('.',''))
 
     return args
 
@@ -123,11 +139,11 @@ def main(args):
             qax = (urhdr >> 25) & 3
             qax_bytes = 1<<(qax+1)
             crypto = (urhdr >> 27)
-            sender = varnum_le(data[4:4+yax_bytes])
-            receiver = varnum_le(data[4+yax_bytes:4+yax_bytes+qax_bytes])
+            sender = from_le(data[4:4+yax_bytes])
+            receiver = from_le(data[4+yax_bytes:4+yax_bytes+qax_bytes])
             payload = data[4+yax_bytes+qax_bytes:]
             if crypto == 2: # %fast
-                keyhash = varnum_le(payload[0:16])
+                keyhash = from_le(payload[0:16])
                 payload = payload[16:]
             else:
                 keyhash = None
@@ -135,6 +151,15 @@ def main(args):
             print('Warn: invpkt')
             continue
 
+        # Decode packet if crypto known
+        decrypted = False
+        if crypto == 0:
+            decrypted = True
+        if crypto == 2 and keyhash in args.keys: # %fast
+            payload = from_le(payload)
+            payload = de_crua(args.keys[keyhash], payload)
+            payload = to_le(payload)
+            decrypted = True
         # Print packet
         (sport, dport, ulength, uchecksum) = unpack('>HHHH', packet[ihl:ihl+8])
         hdata = [('proto', str(proto)),
@@ -148,7 +173,12 @@ def main(args):
                 v_arrow + ' ' +
                 colorize(ipv4str(dstaddr), COLOR_IP) + v_colon + colorize(str(dport), COLOR_IP) + ' ' +
                 ' '.join(colorize(key, COLOR_HEADER) + v_equal + colorize(value, COLOR_VALUE) for (key,value) in hdata))
-        print('    ' + colorize(hexstr(payload), COLOR_DATA))
+        if decrypted: # decrypted or unencrypted data
+            print('    ' + colorize(hexstr(payload), COLOR_DATA))
+            cake = cue(from_le(payload))
+            print('    ' + repr(cake))
+        else: # [sealed]
+            print('    [' + colorize(hexstr(payload), COLOR_DATA_ENC)+']')
 
 if __name__ == '__main__':
     # Force UTF8 out
