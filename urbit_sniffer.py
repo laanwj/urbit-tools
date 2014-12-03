@@ -141,7 +141,7 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
     if decrypted: # decrypted or unencrypted data
         print('    ' + colorize(hexstr(payload), COLOR_DATA))
         cake = cue(from_le(payload))
-        print('    ' + (', '.join(strings(cake))))
+        print('    ' + (', '.join(repr(x) for x in strings(cake))))
     else: # [sealed]
         print('    [' + colorize(hexstr(payload), COLOR_DATA_ENC)+']')
 
