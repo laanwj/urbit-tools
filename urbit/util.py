@@ -25,10 +25,7 @@ def num_to_term(x):
 def strings(t):
     '''Naively find ASCII strings/terms in noun.'''
     if isinstance(t, tuple):
-        rv = []
-        for x in t:
-            rv.extend(strings(x))
-        return rv
+        return strings(t[0]) + strings(t[1])
     elif t:
         s = to_le(t)
         if any(ch < 32 or ch >= 127 for ch in s):

@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+import sys
+sys.path.append('..')
 from urbit.crua import de_crua
 
 #print(hex(shas(bin_to_num(b'og-a'), 0)))

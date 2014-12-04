@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+import sys
+sys.path.append('..')
 # names test
 from urbit.syllables import sis,dex
 from urbit.pname import pname, wren_un
@@ -556,154 +558,20 @@ names=[
     ('tirryt-balsyt', 0xffffffff),
 ]
 
-permute = [None]*0x100
 ax = []
-permuteh = [None]*0x100
-
 for n,orig in names:
     aa = invname(n[0:6])
     bb = invname(n[7:])
     #print '%04x = %04x %04x' % (orig,aa,bb)
     ax.append((aa,bb,orig))
-    if (orig & ~0xff) == 0x10000:
-        permute[orig & 0xff] = bb & 0xff
-    if (orig & ~0xff00) == 0x10000:
-        permuteh[(orig >> 8) & 0xff] = bb & 0xff
-
-permute_rev = [None]*0x100
-permuteh_rev = [None]*0x100
-for i in range(0,256):
-    permute_rev[permute[i]] = i
-    permuteh_rev[permuteh[i]] = i
-
-if None in permute_rev or None in permuteh_rev:
-    exit(1)
-
-'''
-print
-ax.sort()
-for (aa,bb,orig) in ax:
-    print '%04x %04x %04x' % (aa,bb,orig)
-'''
-'''
-prev = 0
-for i in range(256):
-    print '%02x %02x %02x %02x %02x' % (i,
-            permute[(i+1)&0xff]^permute[i],
-            permuteh[(i+1)&0xff]^permuteh[i],
-            permute_rev[(i+1)&0xff]^permute_rev[i],
-            permuteh_rev[(i+1)&0xff]^permuteh_rev[i])
-'''
-vmap = {
-0x100:0x00,
-0x101:0xe0,
-0x102:0x70,
-0x103:0x9a,
-0x104:0xca,
-0x105:0xf6,
-0x106:0xdb,
-0x107:0xe7,
-0x108:0xa8,
-0x109:0x60,
-0x10a:0xf4,
-0x10b:0x50,
-0x10c:0x08,
-0x10d:0x78,
-0x10e:0x90,
-0x10f:0xdc,
-0x110:0x2d,
-0x120:0x4b,
-0x140:0xc9,
-0x180:0x35,
-0x1ff:0x47,
-0x200:0xe0,
-0x201:0x00,
-0x202:0x9a,
-0x300:0xee,
-0x400:0xd0,
-0x500:0xe2,
-0x5ff:0x6a,
-}
 
 for (aa,bb,orig) in ax:
     h = (orig >> 8)&0xff
     l = orig & 0xff
-    try:
-        #e0h = vmap[orig >> 8]
-        e0h = permute_rev[permuteh[h ^ 0x00]] # 0x100
-        #e0h = permute_rev[permuteh[h ^ 0x01]] # 0x200
-        #e0h = permute_rev[permuteh[h ^ 0xb7]] # 0x300
-    except KeyError:
-        #print '%08x = [%04x %04x]' % (orig, aa, bb)
-        print('%08x = [%04x %04x]' % (orig, (aa+bb)&0xffff, bb))
-    else:
-        #perm1 = (l ^ e0h)&0xff
-        #perm2 = (0xda ^ h)&0xff
-        #aa2 = (0x0026) & 0xffff
-        #bb2 = permute[perm1] | (permute[perm2] << 8)
-        #aa2 = (aa2 - bb2) & 0xffff
-        #print '%08x = [%04x %04x] [%04x %04x]' % (orig,aa,bb,aa2,bb2)
-        rv = wren_un(orig)
-        aa2 = (rv >> 16)
-        bb2 = rv & 0xffff
-        aa2 = (aa2 - bb2) & 0xffff
-        print('%08x = [%04x %04x] [%04x %04x]' % (orig,aa,bb,aa2,bb2))
 
-# bb hi depends on orig & 0xff00 (perm2)
-############################################
-# 0x00 fd <- da
-# 0x01 1d <- db
-# 0x02 8d <- d8
-# 0x03 67 <- d9
-# 0x04 37 <- de
-# 0x05 0b <- df
-# 0x06 26 <- dc
-# 0x07 f4 <- dd
-# 0x08 55 <- d2
-# 0x09 9d <- d3
-# 0x0a 09 <- d0
-# 0x0b ad <- d1
-# 0x0c f5 <- d6
-# 0x0d 85 <- d7
-# 0x0e 6d <- d4
-# 0x0f 21 <- d5
-# 0x10 d0 <- ca
-# 0x20 b6 <- fa
-
-# map
-#  00000000 11011010
-#  00000001 11011011
-#  00000010 11011000
-#  00000100 11011100
-#  00001000 11010010
-#  00010000 11001010
-#  00100000 11111010
-
-#  base: 0xda
-#  bit 0 -> 00000001
-#  bit 1 -> 00000010
-#  bit 2 -> 00000100
-#  bit 3 -> 00001000
-#  bit 4 -> 00010000
-#  bit 5 -> 00100000
-
-# bb lo starting point depending on orig & 0xff00
-############################################
-# 0x00 b7 <- 00
-# 0x01 b9 <- e0
-# 0x02 a7 <- 70
-# 0x03 34 <- 9a
-# 0x04 d0 <- ca
-# 0x05 1e <- f6
-# 0x06 1d <- db
-# 0x07 84 <- e7
-# 0x08 f3 <- a8
-# 0x09 7b <- 60
-# 0x0a 8f <- f4
-# 0x0b 3d <- 50
-# 0x0c 6b <- 08
-# 0x0d 7f <- 78
-# 0x0e 14 <- 90
-# 0x0f 26 <- dc
-# 0x300 05 <- ee
+    rv = wren_un(orig)
+    aa2 = (rv >> 16)
+    bb2 = rv & 0xffff
+    aa2 = (aa2 - bb2) & 0xffff
+    print('%08x = [%04x %04x] [%04x %04x]' % (orig,aa,bb,aa2,bb2))
 

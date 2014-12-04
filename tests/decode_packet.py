@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+import sys
+sys.path.append('..')
 import urbit.util as urbit_util
 from urbit.util import to_le, strings
 from urbit.cue import cue
