@@ -26,6 +26,8 @@ class Args: # default args
     ports = set(list(range(4000,4008)) + [13337, 41954])
     # known keys for decrypting packets
     keys = {}
+    # dump entire nouns
+    show_nouns = False
 
 # constants...
 CRYPTOS = {0:'%none', 1:'%open', 2:'%fast', 3:'%full'}
@@ -70,6 +72,7 @@ def parse_args():
     parser.add_argument('-p, --ports', dest='ports', help='Ports to listen on (default: '+pdefault+')')
     parser.add_argument('-i, --interface', dest='interface', help='Interface to listen on (default:'+idefault+')', default=idefault)
     parser.add_argument('-k, --keys', dest='keys', help='Import keys from file (with <keyhash> <key> per line)', default=None)
+    parser.add_argument('-n, --show-nouns', dest='show_nouns', action='store_true', help='Show full noun representation of decoded packets', default=False)
 
     r = parser.parse_args()
     args.interface = r.interface.encode()
@@ -91,6 +94,7 @@ def parse_args():
                 l = line.split()
                 # filter out '.' so that keys can be copied directly
                 args.keys[int(l[0].replace('.',''))] = int(l[1].replace('.',''))
+    args.show_nouns = r.show_nouns
 
     return args
 
@@ -151,6 +155,8 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
             subpacket = to_le(cake[1][1][1])
             dump_urbit_packet(args, None, None, None, None, subpacket)
         else:
+            if args.show_nouns:
+                print('    ' + repr(cake))
             print('    ' + (', '.join(repr(x) for x in strings(cake))))
     else: # [sealed]
         print('    [' + colorize(hexstr(payload), COLOR_DATA_ENC)+']')
