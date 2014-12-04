@@ -1,14 +1,14 @@
 What is this?
 --------------
 
-    As much fun as a barrel of puppies                                                                                                                     
-    - Vernor Vinge, A fire Upon the Deep                                                                                                                   
+    As much fun as a barrel of puppies
+    - Vernor Vinge, A fire Upon the Deep
 
 Urbit utility functions implemented in Python 3:
 
-- `cue` - Unpack ('unjam') nouns
-- `de:crua` - Decode network packets
-- `@p` - Ship number to scrambled ship name
+- `cue` - Unpack ('unjam') nouns as nested tuples
+- `de:crua` - Decode %fast network packets ("Cryptosuite A" symmetric decryption)
+- `@p` - Number to scrambled ship name
 
 Command-line tools:
 
@@ -19,7 +19,7 @@ Command-line tools:
         015facce8d9c058f07fe0c1de0910b234b7b1bc8be0c3b3839e0ebbdb99d037e5bd9dc3c0001000000000000c2009fb01e230d000080011720e0ce016f2e2c0ff0d7190ba303297941cb6b737b417b7b5b03
         'bund', 'q', 'gh', 'radio', 'd', 'zong', 'mess', 'say', ':cat %/hymn/hook'
 
-- `namebrute.py` - Find ship names that match entries a word list or dictionary
+- `namebrute.py` - Find ship names that match entries in a word list or dictionary
 
 Extracting crypto keys
 -----------------------
