@@ -59,6 +59,7 @@ def colorize(str, col):
 
 # cli colors and glyphs
 COLOR_TIMESTAMP = 38
+COLOR_RECIPIENT = 51
 COLOR_IP = 21
 COLOR_HEADER = 27
 COLOR_VALUE = 33
@@ -142,9 +143,7 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
     # Print packet
     hdata = [('proto', str(proto)),
              ('mug', '%05x' % mug),
-             ('crypto', crypto_name(crypto)),
-             ('sender', pname(sender)),
-             ('receiver', pname(receiver))]
+             ('crypto', crypto_name(crypto))]
     if keyhash is not None:
          hdata += [('keyhash', format_hexnum(keyhash))]
 
@@ -153,12 +152,17 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
         if args.show_timestamps:
             metadata += colorize(datetime.datetime.utcnow().strftime('%H%M%S.%f'), COLOR_TIMESTAMP) + ' '
         metadata += (colorize(ipv4str(srcaddr), COLOR_IP) + v_colon + colorize(str(sport), COLOR_IP) + ' ' +
+                colorize(pname(sender), COLOR_RECIPIENT) + ' ' +
                 v_arrow + ' ' +
-                colorize(ipv4str(dstaddr), COLOR_IP) + v_colon + colorize(str(dport), COLOR_IP))
+                colorize(ipv4str(dstaddr), COLOR_IP) + v_colon + colorize(str(dport), COLOR_IP) + ' ' +
+                colorize(pname(receiver), COLOR_RECIPIENT))
     else:
-        metadata = '    %fore' # nested packet
+        metadata = ('    %fore ' + # nested packet
+                colorize(pname(sender), COLOR_RECIPIENT) + ' ' +
+                v_arrow + ' ' +
+                colorize(pname(receiver), COLOR_RECIPIENT))
 
-    print( metadata  + ' ' +
+    print( metadata + v_colon + ' ' +
             ' '.join(colorize(key, COLOR_HEADER) + v_equal + colorize(value, COLOR_VALUE) for (key,value) in hdata))
     if decrypted: # decrypted or unencrypted data
         if args.show_raw:
