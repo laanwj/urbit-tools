@@ -13,7 +13,7 @@ Urbit utility functions implemented in Python 3:
 Command-line tools:
 
 - `urbit_sniffer.py` - Network sniffer that parses urbit packets, decodes them (if the key is available) and
-   dumpes their contents to the console. Current output (`-n` mode):
+   dumpes their contents to the console. Current output (`-r` mode):
 
     198.199.112.32:37132 → 192.168.1.123:12345 proto=4 mug=f95f1 crypto=%fast sender=doznec receiver=satfyl-saldyl keyhash=0x84e9.cc31.960e.b3d5.fc58.e393.1a86.0108
         015facce8d9c058f07fe0c1de0910b234b7b1bc8be0c3b3839e0ebbdb99d037e5bd9dc3c0001000000000000c2009fb01e230d000080011720e0ce016f2e2c0ff0d7190ba303297941cb6b737b417b7b5b03

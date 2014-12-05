@@ -27,7 +27,9 @@ class Args: # default args
     # known keys for decrypting packets
     keys = {}
     # dump entire nouns
-    show_nouns = False
+    show_nouns = True
+    # show hex for decrypted packets
+    show_raw = False
 
 # constants...
 CRYPTOS = {0:'%none', 1:'%open', 2:'%fast', 3:'%full'}
@@ -72,7 +74,8 @@ def parse_args():
     parser.add_argument('-p, --ports', dest='ports', help='Ports to listen on (default: '+pdefault+')')
     parser.add_argument('-i, --interface', dest='interface', help='Interface to listen on (default:'+idefault+')', default=idefault)
     parser.add_argument('-k, --keys', dest='keys', help='Import keys from file (with <keyhash> <key> per line)', default=None)
-    parser.add_argument('-n, --show-nouns', dest='show_nouns', action='store_true', help='Show full noun representation of decoded packets', default=False)
+    parser.add_argument('-n, --no-show-nouns', dest='show_nouns', action='store_false', help='Don\'t show full noun representation of decoded packets', default=True)
+    parser.add_argument('-r, --show-raw', dest='show_raw', action='store_true', help='Show raw hex representation of decoded packets', default=False)
 
     r = parser.parse_args()
     args.interface = r.interface.encode()
@@ -95,6 +98,7 @@ def parse_args():
                 # filter out '.' so that keys can be copied directly
                 args.keys[int(l[0].replace('.',''))] = int(l[1].replace('.',''))
     args.show_nouns = r.show_nouns
+    args.show_raw = r.show_raw
 
     return args
 
@@ -149,7 +153,8 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
     print( metadata  + ' ' +
             ' '.join(colorize(key, COLOR_HEADER) + v_equal + colorize(value, COLOR_VALUE) for (key,value) in hdata))
     if decrypted: # decrypted or unencrypted data
-        print('    ' + colorize(hexstr(payload), COLOR_DATA))
+        if args.show_raw:
+            print('    ' + colorize(hexstr(payload), COLOR_DATA))
         cake = cue(from_le(payload))
         if cake[0] == 1701998438: # %fore
             subpacket = to_le(cake[1][1][1])
