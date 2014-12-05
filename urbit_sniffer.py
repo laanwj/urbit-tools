@@ -7,7 +7,7 @@ urbit UDP sniffer
 
 Usage: urbit_sniffer.py [-p <port1>-<port2>,<port3>,...] [-i <interface>]
 '''
-import socket, struct, sys, io, argparse
+import socket, struct, sys, io, argparse, datetime
 from struct import pack,unpack
 from binascii import b2a_hex
 from urbit.util import format_hexnum,from_le,to_le,strings
@@ -30,6 +30,8 @@ class Args: # default args
     show_nouns = True
     # show hex for decrypted packets
     show_raw = False
+    # show timestamps
+    show_timestamps = False
 
 # constants...
 CRYPTOS = {0:'%none', 1:'%open', 2:'%fast', 3:'%full'}
@@ -56,6 +58,7 @@ def colorize(str, col):
     return ('\x1b[38;5;%im' % col) + str + ('\x1b[0m')
 
 # cli colors and glyphs
+COLOR_TIMESTAMP = 38
 COLOR_IP = 21
 COLOR_HEADER = 27
 COLOR_VALUE = 33
@@ -76,6 +79,7 @@ def parse_args():
     parser.add_argument('-k, --keys', dest='keys', help='Import keys from file (with <keyhash> <key> per line)', default=None)
     parser.add_argument('-n, --no-show-nouns', dest='show_nouns', action='store_false', help='Don\'t show full noun representation of decoded packets', default=True)
     parser.add_argument('-r, --show-raw', dest='show_raw', action='store_true', help='Show raw hex representation of decoded packets', default=False)
+    parser.add_argument('-t, --show-timestamp', dest='show_timestamps', action='store_true', help='Show timestamps', default=False)
 
     r = parser.parse_args()
     args.interface = r.interface.encode()
@@ -99,6 +103,7 @@ def parse_args():
                 args.keys[int(l[0].replace('.',''))] = int(l[1].replace('.',''))
     args.show_nouns = r.show_nouns
     args.show_raw = r.show_raw
+    args.show_timestamps = r.show_timestamps
 
     return args
 
@@ -144,7 +149,10 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
          hdata += [('keyhash', format_hexnum(keyhash))]
 
     if srcaddr is not None:
-        metadata = (colorize(ipv4str(srcaddr), COLOR_IP) + v_colon + colorize(str(sport), COLOR_IP) + ' ' +
+        metadata = ''
+        if args.show_timestamps:
+            metadata += colorize(datetime.datetime.utcnow().strftime('%H%M%S.%f'), COLOR_TIMESTAMP) + ' '
+        metadata += (colorize(ipv4str(srcaddr), COLOR_IP) + v_colon + colorize(str(sport), COLOR_IP) + ' ' +
                 v_arrow + ' ' +
                 colorize(ipv4str(dstaddr), COLOR_IP) + v_colon + colorize(str(dport), COLOR_IP))
     else:
