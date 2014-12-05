@@ -20,6 +20,8 @@ Command-line tools:
         (1684960610, (0, ((113, (26727, (478509556082, 0))), (2429, (6, (100, (1735290746, (1936942445, (170141184501304421605047107635422167040, (108462336, (7954803, 142806000102157565365653161490641937210)))))))))))
         'bund', 'q', 'gh', 'radio', 'd', 'zong', 'mess', 'say', ':cat %/hymn/hook'
 
+    - Also opens nested forwarded packets (using %fore). No automatic reassembly of fragmented %carp packets happens yet.
+
 - `namebrute.py` - Find ship names that match entries in a word list or dictionary
 
 Extracting crypto keys
