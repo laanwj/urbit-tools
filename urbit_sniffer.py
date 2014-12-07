@@ -7,13 +7,14 @@ urbit UDP sniffer
 
 Usage: urbit_sniffer.py [-p <port1>-<port2>,<port3>,...] [-i <interface>]
 '''
-import socket, struct, sys, io, argparse, datetime
+import struct, sys, io, argparse, datetime
 from struct import pack,unpack
 from binascii import b2a_hex
 from urbit.util import format_hexnum,from_le,to_le,strings
 from urbit.cue import cue
 from urbit.pname import pname
 from urbit.crua import de_crua
+from misc.sniffer import Sniffer, PCapLoader
 
 if sys.version_info[0:2] < (3,0):
     print("Requires python3", file=sys.stderr)
@@ -35,8 +36,6 @@ class Args: # default args
 
 # constants...
 CRYPTOS = {0:'%none', 1:'%open', 2:'%fast', 3:'%full'}
-SO_BINDTODEVICE = 25
-ETH_P_ALL = 0x0300 # =htons(0x03) from /usr/include/linux/if_ether.h
 
 # utilities...
 def ipv4str(addr):
@@ -81,9 +80,13 @@ def parse_args():
     parser.add_argument('-n, --no-show-nouns', dest='show_nouns', action='store_false', help='Don\'t show full noun representation of decoded packets', default=True)
     parser.add_argument('-r, --show-raw', dest='show_raw', action='store_true', help='Show raw hex representation of decoded packets', default=False)
     parser.add_argument('-t, --show-timestamp', dest='show_timestamps', action='store_true', help='Show timestamps', default=False)
+    parser.add_argument('-l, --read', dest='read_dump', help='Read a pcap dump file (eg from tcpdump)', default=None)
 
     r = parser.parse_args()
-    args.interface = r.interface.encode()
+    if r.read_dump is not None:
+        args.packet_source = PCapLoader(r.read_dump)
+    else:
+        args.packet_source = Sniffer(r.interface.encode())
     if r.ports is not None:
         args.ports = set()
         for t in r.ports.split(','):
@@ -108,7 +111,7 @@ def parse_args():
 
     return args
 
-def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
+def dump_urbit_packet(args, timestamp, srcaddr, sport, dstaddr, dport, data):
     try:
         # Urbit header and payload
         urhdr = unpack('<L', data[0:4])[0]
@@ -133,7 +136,7 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
 
     # Decode packet if crypto known
     decrypted = False
-    if crypto == 0:
+    if crypto in [0,1]: # %none %open
         decrypted = True
     if crypto == 2 and keyhash in args.keys: # %fast
         payload = from_le(payload)
@@ -150,7 +153,7 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
     if srcaddr is not None:
         metadata = ''
         if args.show_timestamps:
-            metadata += colorize(datetime.datetime.utcnow().strftime('%H%M%S.%f'), COLOR_TIMESTAMP) + ' '
+            metadata += colorize(datetime.datetime.utcfromtimestamp(timestamp).strftime('%H%M%S.%f'), COLOR_TIMESTAMP) + ' '
         metadata += (colorize(ipv4str(srcaddr), COLOR_IP) + v_colon + colorize(str(sport), COLOR_IP) + ' ' +
                 colorize(pname(sender), COLOR_RECIPIENT) + ' ' +
                 v_arrow + ' ' +
@@ -170,7 +173,7 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
         cake = cue(from_le(payload))
         if cake[0] == 1701998438: # %fore
             subpacket = to_le(cake[1][1][1])
-            dump_urbit_packet(args, None, None, None, None, subpacket)
+            dump_urbit_packet(args, None, None, None, None, None, subpacket)
         else:
             if args.show_nouns:
                 print('    ' + repr(cake))
@@ -180,17 +183,8 @@ def dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data):
 
 
 def main(args):
-    # would be better as filtering happens in the kernel but doesn't catch outgoing packets:
-    #s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
-
-    s = socket.socket(socket.PF_PACKET, socket.SOCK_DGRAM, ETH_P_ALL)
-    print(v_attention + ' Listening on ' + args.interface.decode() + ' ports ' + (',').join(str(x) for x in args.ports))
-    s.setsockopt(socket.SOL_SOCKET,SO_BINDTODEVICE,pack("%ds" % (len(args.interface)+1,), args.interface))
-
-    while True:
-        packet = s.recvfrom(65565)
-        packet = packet[0] # drop extra information
-
+    print(v_attention + ' Listening on ' + args.packet_source.name + ' ports ' + (',').join(str(x) for x in args.ports))
+    for timestamp,packet in args.packet_source:
         try:
             # IP header
             iph = unpack('!BBHHHBBH4s4s', packet[0:20])
@@ -219,7 +213,7 @@ def main(args):
             print('Warn: invpkt')
             continue
 
-        dump_urbit_packet(args, srcaddr, sport, dstaddr, dport, data)
+        dump_urbit_packet(args, timestamp, srcaddr, sport, dstaddr, dport, data)
 
 if __name__ == '__main__':
     # Force UTF8 out

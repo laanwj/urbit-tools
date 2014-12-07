@@ -70,3 +70,15 @@ Extract the number pairs and put these in a file, e.g. `crypto_keys.txt`, in a t
 
 The resulting file can be passed as `-k crypto_keys.txt` to `urbit_sniffer.py`.
 
+Using tcpdump
+---------------
+
+Instead of capturing directly from the network, which requires `root` privileges on most operating systems,
+Urbit Sniffer can also read `.pcap` files as produced by e.g.
+
+```bash
+tcpdump -w urbit.pcap -p -i eth0 'udp portrange 4000-4008'
+```
+
+Pass the resulting file using `-l urbit.pcap`.
+
