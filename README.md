@@ -19,10 +19,9 @@ Command-line tools:
 
     - Current output (`-r` mode):
 ```
-    198.199.112.32:37132 → 192.168.1.123:12345 proto=4 mug=f95f1 crypto=%fast sender=doznec receiver=satfyl-saldyl keyhash=0x84e9.cc31.960e.b3d5.fc58.e393.1a86.0108
-        015facce8d9c058f07fe0c1de0910b234b7b1bc8be0c3b3839e0ebbdb99d037e5bd9dc3c0001000000000000c2009fb01e230d000080011720e0ce016f2e2c0ff0d7190ba303297941cb6b737b417b7b5b03
-        (1684960610, (0, ((113, (26727, (478509556082, 0))), (2429, (6, (100, (1735290746, (1936942445, (170141184501304421605047107635422167040, (108462336, (7954803, 142806000102157565365653161490641937210)))))))))))
-        'bund', 'q', 'gh', 'radio', 'd', 'zong', 'mess', 'say', ':cat %/hymn/hook'
+    132417.149947 198.199.112.32:36148 doznec → 192.168.1.14:4006 michep-banlur: proto=5 mug=3ab51 crypto=%fast keyhash=0x89b0.ec66.c9a4.27e7.10ff.f4ea.6a49.0da9
+    [%bund ~ [%q %gh %radio ~] 0xe3 0x2 %d %zong %mess 0x8000000d232262804f70000000000000 0x6820100 
+        %say 0x7327303920656874206f74206b6361626b63696b20612073277461687420776f6e202c696763<'cgi, now that's a kickback to the 90's'>]
 ```
 
 - `namebrute.py` - Find ship names that match entries in a word list or dictionary

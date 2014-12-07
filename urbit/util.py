@@ -22,15 +22,33 @@ def num_to_term(x):
     '''@tas'''
     return '%' + to_le(x).decode()
 
-def strings(t):
-    '''Naively find ASCII strings/terms in noun.'''
-    if isinstance(t, tuple):
-        return strings(t[0]) + strings(t[1])
-    elif t:
-        s = to_le(t)
-        if any(ch < 32 or ch >= 127 for ch in s):
-            return []
-        return [s.decode('ascii')]
+def probable_term(x):
+    return all((ch in b'abcdefghijklmnopqrstuvwxyz') for ch in to_le(x))
+
+def dump_noun(noun, f):
+    '''
+    Dump noun in human-intelligable format.
+    '''
+    if isinstance(noun, tuple):
+        f.write('[')
+        dump_noun(noun[0], f)
+        f.write(' ')
+        while isinstance(noun[1], tuple):
+            noun = noun[1]
+            dump_noun(noun[0], f)
+            f.write(' ')
+        dump_noun(noun[1], f)
+        f.write(']')
     else:
-        return []
+        if noun == 0:
+            f.write('~')
+        else:
+            if probable_term(noun):
+                f.write(num_to_term(noun))
+            else:
+                f.write(hex(noun))
+                s = to_le(noun)
+                if all(((ch >= 32 and ch < 127) or ch==10 or ch==13) for ch in s):
+                    s = s.decode().replace('\\','\\\\').replace('\n','\\n').replace('\r','\\r').replace('\'','\\\'')
+                    f.write('<\''+s+'\'>')
 

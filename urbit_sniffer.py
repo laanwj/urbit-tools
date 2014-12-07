@@ -10,7 +10,7 @@ Usage: urbit_sniffer.py [-p <port1>-<port2>,<port3>,...] [-i <interface>]
 import struct, sys, io, argparse, datetime
 from struct import pack,unpack
 from binascii import b2a_hex
-from urbit.util import format_hexnum,from_le,to_le,strings
+from urbit.util import format_hexnum,from_le,to_le,dump_noun
 from urbit.cue import cue
 from urbit.pname import pname
 from urbit.crua import de_crua
@@ -176,8 +176,9 @@ def dump_urbit_packet(args, timestamp, srcaddr, sport, dstaddr, dport, data):
             dump_urbit_packet(args, None, None, None, None, None, subpacket)
         else:
             if args.show_nouns:
-                print('    ' + repr(cake))
-            print('    ' + (', '.join(repr(x) for x in strings(cake))))
+                sys.stdout.write('    ')
+                dump_noun(cake, sys.stdout)
+                sys.stdout.write('\n')
     else: # [sealed]
         print('    [' + colorize(hexstr(payload), COLOR_DATA_ENC)+']')
 
@@ -195,7 +196,7 @@ def main(args):
             protocol = iph[6]
             srcaddr = iph[8]
             dstaddr = iph[9]
-            if protocol != 17: # not UDP or no place for header
+            if protocol != 17: # not UDP
                 #print("Warn: invproto")
                 continue
 
