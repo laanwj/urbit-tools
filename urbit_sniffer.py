@@ -33,6 +33,8 @@ class Args: # default args
     show_raw = False
     # show timestamps
     show_timestamps = False
+    # show keyhashes for decrypted packets
+    always_show_keyhashes = False
 
 # constants...
 CRYPTOS = {0:'%none', 1:'%open', 2:'%fast', 3:'%full'}
@@ -81,6 +83,7 @@ def parse_args():
     parser.add_argument('-r, --show-raw', dest='show_raw', action='store_true', help='Show raw hex representation of decoded packets', default=False)
     parser.add_argument('-t, --show-timestamp', dest='show_timestamps', action='store_true', help='Show timestamps', default=False)
     parser.add_argument('-l, --read', dest='read_dump', help='Read a pcap dump file (eg from tcpdump)', default=None)
+    parser.add_argument('--always-show-keyhashes', dest='always_show_keyhashes', help='Show keyhashes even for decrypted packets (more spammy)', default=False)
 
     r = parser.parse_args()
     if r.read_dump is not None:
@@ -108,6 +111,7 @@ def parse_args():
     args.show_nouns = r.show_nouns
     args.show_raw = r.show_raw
     args.show_timestamps = r.show_timestamps
+    args.always_show_keyhashes = r.always_show_keyhashes
 
     return args
 
@@ -147,7 +151,7 @@ def dump_urbit_packet(args, timestamp, srcaddr, sport, dstaddr, dport, data):
     hdata = [('proto', str(proto)),
              ('mug', '%05x' % mug),
              ('crypto', crypto_name(crypto))]
-    if keyhash is not None:
+    if keyhash is not None and (args.always_show_keyhashes or not decrypted):
          hdata += [('keyhash', format_hexnum(keyhash))]
 
     if srcaddr is not None:
