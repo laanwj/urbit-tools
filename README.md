@@ -4,22 +4,25 @@ What is this?
     As much fun as a barrel of puppies
     - Vernor Vinge, A fire Upon the Deep
 
-Urbit utility functions implemented in Python 3:
+The Martian Communications Kit allows the wielder a level of access to martian communications using earth technology.
+At the base are a few Urbit equivalent utilities implemented in Python 3:
 
-- `cue` - Unpack ('unjam') nouns as nested tuples
-- `de:crua` - Decode %fast network packets ("Cryptosuite A" symmetric decryption)
-- `@p` - Number to scrambled ship name
+- `cue` - urbit.cue - Unpack ('unjam') nouns as nested tuples
+- `de:crua` - urbit.crua - Decode %fast network packets ("Cryptosuite A" symmetric decryption)
+- `@p` - urbit.pame - Number to scrambled ship name
+
+Functionality for encoding earth data to martian data representations is not available in this version of the Communications Kit.
 
 Command-line tools:
 
-- `urbit_sniffer.py` - Network sniffer that parses urbit packets, decodes them (if the key is available) and
-   dumpes their contents to the console.
+- `urbit_sniffer.py` - Network sniffer that parses and decodes martian packets ("cards"), and
+   prints their contents to the console in a way more or less understandable by those coming from earth.
 
     - Also opens nested forwarded packets (using %fore). No automatic reassembly of fragmented %carp packets happens yet.
 
     - Current output (`-r` mode):
 ```
-    132417.149947 198.199.112.32:36148 doznec → 192.168.1.14:4006 michep-banlur: proto=5 mug=3ab51 crypto=%fast keyhash=0x89b0.ec66.c9a4.27e7.10ff.f4ea.6a49.0da9
+    132417.149947 198.199.112.32:36148 doznec → 192.168.1.14:4006 michep-banlur: proto=5 mug=3ab51 crypto=%fast
     [%bund ~ [%q %gh %radio ~] 0xe3 0x2 %d %zong %mess 0x8000000d232262804f70000000000000 0x6820100 
         %say 0x7327303920656874206f74206b6361626b63696b20612073277461687420776f6e202c696763<'cgi, now that's a kickback to the 90's'>]
 ```
@@ -30,8 +33,8 @@ Extracting crypto keys
 -----------------------
 
 For the sniffer to be able to decrypt messages encrypted using %fast symmetric
-encryption, it needs a keyhash -> key map.
-
+encryption, it needs a keyhash to key map.
+This key map can only be aquired by interrogating the state of the martian computing equipment.
 Urbit uses a different set of keys per ship it communicates with. These can be queried
 from ames using:
 
